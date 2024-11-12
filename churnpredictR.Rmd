@@ -1,0 +1,141 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#Installing and loading the tidyverse package
+install.packages("tidyverse")
+library(tidyverse)
+```
+```{r}
+telco_data <- read_csv("/Users/megha/Downloads/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+head(telco_data)
+```
+```{r}
+library(tidyverse)
+telco_data <- read_csv("/Users/megha/Downloads/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+```
+
+
+```{r}
+#Visualizing statistical informations about our data to identify the basic distribution (average, median, etc)
+summary(telco_data)
+```
+```{r}
+#Using str() to identify categorical and numerical variables
+str(telco_data)
+```
+```{r}
+#Counting the number of missing values
+sum(is.na(telco_data))
+
+```
+```{r}
+#Identifying the columns that have missing values
+sapply(telco_data, function(x) sum(is.na(x)))
+```
+```{r}
+#Replacing the missing values with the column median
+telco_data$TotalCharges <- ifelse(is.na(telco_data$TotalCharges),
+                                  median(telco_data$TotalCharges, na.rm = TRUE),
+                                  telco_data$TotalCharges)
+```
+```{r}
+#Using the sum() function to verify if the missing values were properly replaced
+sum(is.na(telco_data))
+
+```
+```{r}
+#MonthlyCharges boxplot.
+ggplot(telco_data, aes(x = "", y = MonthlyCharges)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "MonthlyCharges Boxplot", x = "", y = "Monthly Charges")
+```
+
+
+
+
+```{r}
+#TotalCharges Boxplot
+ggplot(telco_data, aes(x = "", y = TotalCharges)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "TotalCharges Boxplot", x = "", y = "Total Charges")
+```
+
+```{r}
+#Churn bar chart
+ggplot(telco_data, aes(x = Churn)) +
+  geom_bar(fill = "steelblue") +
+  labs(title = "Churn Distribution", x = "Churn", y = "Count")
+```
+```{r}
+#Churn bar chart
+ggplot(telco_data, aes(x = Churn)) +
+  geom_bar(fill = "steelblue") +
+  labs(title = "Churn Distribution", x = "Churn", y = "Count")
+```
+```{r}
+#Churn by gender
+ggplot(telco_data, aes(x = gender, fill = Churn)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Churn by Gender", x = "Gender", y = "Count")
+```
+```{r}
+#Churn by senior citizens
+ggplot(telco_data, aes(x = as.factor(SeniorCitizen), fill = Churn)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Churn by Senior Citizens", x = "Senior Citizen", y = "Count")
+```
+
+```{r}
+#Churn by senior citizens
+ggplot(telco_data, aes(x = as.factor(SeniorCitizen), fill = Churn)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Churn by Senior Citizens", x = "Senior Citizen", y = "Count")
+```
+```{r}
+#Churn by partnership status
+ggplot(telco_data, aes(x = Partner, fill = Churn)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Churn by Partnership Status", x = "Has Partner", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+#Churn per contract type bar chart
+ggplot(telco_data, aes(x = Contract, fill = Churn)) +
+  geom_bar(position = "fill") +
+  labs(title = "Churn per Contract Type", x = "Contract", y = "Proportion")
+```
+
+```{r}
+#Churn per payment method bar chart
+ggplot(telco_data, aes(x = PaymentMethod, fill = Churn)) +
+  geom_bar(position = "fill") +
+  labs(title = "Churn per Payment Method", x = "Payment Method", y = "Proportion")
+
+```
+```{r}
+#Churn by monthly charges density chart
+ggplot(telco_data, aes(x = MonthlyCharges, fill = Churn)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Monthly Charges Distribution by Churn", x = "Monthly Charges", y = "Density")
+
+```
+```{r}
+#total charges by churn boxplot
+ggplot(telco_data, aes(x = Churn, y = TotalCharges, fill = Churn)) +
+  geom_boxplot() +
+  labs(title = "Total Charges by Churn Boxplot", x = "Churn", y = "Total Charges")
+```
+
+
+
+
+
+
+
+
+
