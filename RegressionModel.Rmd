@@ -1,0 +1,205 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+```{r}
+library(readr)
+library(tidyverse)
+library(rsample)
+library(caret)
+library(nortest)
+library(class)
+library(psych)
+library(performance)
+```
+
+```{r}
+churn <- read.csv("/Users/megha/Downloads/WA_Fn-UseC_-Telco-Customer-Churn.csv", stringsAsFactors = T)
+churn
+```
+```{r}
+summary(churn)
+```
+
+
+```{r}
+str(churn)
+```
+
+
+```{r}
+# Change the No internet service -> No
+churn[churn$MultipleLines == "No phone service", "MultipleLines"] <- "No"
+churn[churn$OnlineSecurity == "No internet service", "OnlineSecurity"] <- "No"
+churn[churn$OnlineBackup == "No internet service", "OnlineBackup"] <- "No"
+churn[churn$DeviceProtection == "No internet service", "DeviceProtection"] <- "No"
+churn[churn$TechSupport == "No internet service", "TechSupport"] <- "No"
+churn[churn$StreamingTV == "No internet service", "StreamingTV"] <- "No"
+churn[churn$StreamingMovies == "No internet service", "StreamingMovies"] <- "No"
+
+# Remove all No internet service level
+levels(churn$MultipleLines)[levels(churn$MultipleLines) == 'No phone service'] <- "No"
+levels(churn$OnlineSecurity)[levels(churn$OnlineSecurity) == 'No internet service'] <- "No"
+levels(churn$OnlineBackup)[levels(churn$OnlineBackup) == 'No internet service'] <- "No"
+levels(churn$DeviceProtection)[levels(churn$DeviceProtection) == 'No internet service'] <- "No"
+levels(churn$TechSupport)[levels(churn$TechSupport) == 'No internet service'] <- "No"
+levels(churn$StreamingTV)[levels(churn$StreamingTV  ) == 'No internet service'] <- "No"
+levels(churn$StreamingMovies)[levels(churn$StreamingMovies  ) == 'No internet service'] <- "No"
+```
+
+
+```{r}
+str(churn)
+```
+
+
+```{r}
+any(duplicated(churn[, -1]))
+```
+
+```{r}
+churn[duplicated(churn[, -1]),]
+```
+
+
+```{r}
+churn <- churn %>% 
+  select(-customerID) %>% 
+  mutate(SeniorCitizen = as.factor(SeniorCitizen)) %>% 
+  na.omit()
+
+churn <- churn[!duplicated(churn),]
+```
+
+
+
+```{r}
+summary(churn)
+```
+```{r}
+par(mfrow=c(1,3))
+boxplot(churn$tenure, main = "Tenure")
+boxplot(churn$MonthlyCharges, main = "MonthlyCharges")
+boxplot(churn$TotalCharges, main = "TotalCharges" )
+```
+```{r}
+churn
+```
+```{r}
+RNGkind(sample.kind = "Rounding")
+set.seed(101) 
+
+#sampling data
+row.sample <- initial_split(data=churn,
+                       prop = 0.8, 
+                       strata = Churn) 
+
+# Split data into data train and data test
+churn_train <- training(row.sample)
+churn_test <- testing(row.sample)
+```
+```{r}
+prop.table(table(churn_train$Churn))
+
+```
+
+```{r}
+RNGkind(sample.kind = "Rounding")
+set.seed(101)
+
+churn_train_down <- downSample(x = churn_train %>% select(-Churn),
+                         y = churn_train$Churn,
+                         yname = "Churn")
+```
+
+```{r}
+prop.table(table(churn_train_down$Churn))
+```
+
+```{r}
+model.glm.all <- glm(formula = Churn ~ .,
+                 data = churn_train_down,
+                 family = "binomial")
+
+summary(model.glm.all)
+```
+```{r}
+model.step.bwd <- step(model.glm.all,
+                  direction = "backward",
+                  trace = F)
+summary(model.step.bwd)
+```
+```{r}
+# Step-wise Model (forward)
+model.glm.none <- glm(formula = Churn ~ 1,
+                  data = churn_train_down,
+                  family = "binomial")
+summary(step(model.glm.none,
+             direction = 'forward',
+             scope = list(upper = model.glm.all),
+             trace = F))
+```
+```{r}
+compare_performance(model.glm.all, model.step.bwd)
+```
+```{r}
+churn_test$glm.prediction <- predict(model.step.bwd, newdata = churn_test, type = "response")
+```
+
+```{r}
+churn_test$glm.Label <- ifelse(churn_test$glm.prediction > 0.5, "Yes" , "No") %>% as.factor()
+```
+```{r}
+churn_test %>% 
+  select(Churn, glm.prediction,glm.Label) %>% 
+  head(6)
+```
+
+Model Evaluation: 
+Evaluating prediction using Confusion matrix
+
+
+```{r}
+confusionMatrix(data=churn_test$glm.Label, reference=churn_test$Churn, positive="Yes")
+
+
+```
+
+
+1. Accuracy rate: 73%
+
+Means that the model could predict accurately of Churn and Not Churn class (compared to data test) for 73%
+Predict True as Churn: 290 (out of 372)
+Predicted True as Not Churn: 733 (out 0f 1031)
+
+2. Focus output: Sensitivity Rate 78%
+
+Means that the model accurately predict True Positive (true prediction to customer churn), and false prediction as customer won’t churn (but, customer does churn on data test) is 78%
+Predict True as Churn: 290 (out of 372)
+Predicted True as Not Churn: 82 (out 0f 372)
+
+
+```{r}
+
+churn_test$glm.Label.4 <- ifelse(churn_test$glm.prediction > 0.45, "Yes" , "No") %>% as.factor()
+confusionMatrix(data=churn_test$glm.Label.4, reference=churn_test$Churn, positive="Yes")
+```
+Sensitivity rate increase to 80%, and decreased 10 false negative prediction compared to previous threshold (0.5)
+
+
